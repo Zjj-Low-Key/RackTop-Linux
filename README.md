@@ -1,3 +1,13 @@
+# RackTop-Linux
+
+基于 [Tongzh-SEU/RackTop](https://github.com/Tongzh-SEU/RackTop) 的 Linux 桌面版本，保留原作者署名、GPL-3.0 许可证与项目规范。
+
+**1.26.0** 面向 **Ubuntu 24.04 x86_64**，从 [本仓库 Releases](https://github.com/Zjj-Low-Key/RackTop-Linux/releases) 下载 `.deb`（推荐）或 `.AppImage`。安装、构建、数据目录及验证说明见 [Linux 使用说明](docs/LINUX.md)。
+
+以下保留原作者介绍和上游平台说明，其中 macOS / Windows 下载链接属于上游仓库。
+
+---
+
 <div align="right">
   🌐 Language:
   <kbd><strong>✔简体中文</strong></kbd>

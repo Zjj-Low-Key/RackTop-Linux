@@ -1,6 +1,6 @@
 [package]
 name = "racktop"
-version = "1.25.4"
+version = "1.26.0"
 description = "Live GPU & CPU monitoring for every server"
 authors = ["RackTop"]
 edition = "2024"
@@ -38,7 +38,7 @@ rusqlite = { version = "0.37", features = ["bundled"] }
 uuid = { version = "1", features = ["v4"] }
 dirs = "6"
 thiserror = "2"
-keyring = { version = "3", features = ["apple-native", "windows-native"] }
+keyring = { version = "3", features = ["apple-native", "windows-native", "sync-secret-service", "crypto-rust"] }
 base64 = "0.22"
 sha2 = "0.10"
 portable-pty = "0.9.0"

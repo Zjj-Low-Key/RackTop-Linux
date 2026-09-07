@@ -1,7 +1,7 @@
 {
   "name": "racktop",
   "private": true,
-  "version": "1.25.4",
+  "version": "1.26.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -11,7 +11,8 @@
     "test:watch": "vitest",
     "tauri": "tauri",
     "bundle:macos": "bash scripts/package-macos.sh",
-    "check": "npm run test && npm run build && cargo test --manifest-path src-tauri/Cargo.toml"
+    "check": "npm run test && npm run build && cargo test --manifest-path src-tauri/Cargo.toml",
+    "bundle:linux": "bash scripts/package-linux.sh"
   },
   "dependencies": {
     "@tauri-apps/api": "^2.8.0",

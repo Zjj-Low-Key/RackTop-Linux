@@ -108,7 +108,7 @@ import packageInfo from '../package.json'
 
 const appPlatform = detectAppPlatform(api.isDesktop, navigator.userAgent)
 const browserPreviewState = api.isDesktop || typeof window === 'undefined' ? null : new URLSearchParams(window.location.search).get('previewState')
-const releaseUrl = (version: string) => `https://github.com/Tongzh-SEU/RackTop/releases/tag/v${version.replace(/^v/i, '')}`
+const releaseUrl = (version: string) => `https://github.com/Zjj-Low-Key/RackTop-Linux/releases/tag/v${version.replace(/^v/i, '')}`
 
 const ONBOARDING_DISMISSED_KEY = 'racktop.onboardingDismissed.v1'
 
@@ -631,7 +631,7 @@ function App() {
     setUpdateCheckError(null)
     try {
       let newer: ReleaseInfo | undefined
-      if (api.isDesktop) {
+      if (api.isDesktop && appPlatform !== 'linux') {
         const update = await checkDesktopAppUpdate()
         if (desktopUpdateRef.current && desktopUpdateRef.current !== update) void desktopUpdateRef.current.close().catch(() => {})
         desktopUpdateRef.current = update
@@ -652,7 +652,11 @@ function App() {
   }, [checkingUpdate])
 
   const startAppUpdate = useCallback(async () => {
-    const requestedVersion = latestRelease?.version ?? '1.25.4'
+    const requestedVersion = latestRelease?.version ?? packageInfo.version
+    if (appPlatform === 'linux') {
+      await openExternalUrl(latestRelease?.url ?? releaseUrl(requestedVersion))
+      return
+    }
     if (!api.isDesktop) {
       setAppUpdateState({ phase: 'downloading', version: requestedVersion, downloadedBytes: 6.8 * 1024 ** 2, totalBytes: 11.4 * 1024 ** 2 })
       return
@@ -878,8 +882,8 @@ function App() {
       else if (payload === 'menu-view-idle') setMainView('idle')
       else if (payload === 'menu-view-mine') setMainView('mine')
       else if (payload === 'menu-view-logs') setShowActivityLog(true)
-      else if (payload === 'menu-help-guide') void openExternalUrl('https://github.com/Tongzh-SEU/RackTop/blob/main/README.md')
-      else if (payload === 'menu-help-project') void openExternalUrl('https://github.com/Tongzh-SEU/RackTop')
+      else if (payload === 'menu-help-guide') void openExternalUrl('https://github.com/Zjj-Low-Key/RackTop-Linux/blob/main/README.md')
+      else if (payload === 'menu-help-project') void openExternalUrl('https://github.com/Zjj-Low-Key/RackTop-Linux')
     })
     return () => {
       void unlistenTray.then((dispose) => dispose())
@@ -1596,7 +1600,7 @@ function App() {
               <div><strong>RackTop</strong><small>算力监控</small></div>
             </button>
             {checkingUpdate && <span className="brand__update brand__update--checking" aria-label="正在检查更新"><RefreshCw className="spin" size={15} /></span>}
-            {!checkingUpdate && shouldShowUpdateBadge(latestRelease?.version, ignoredUpdateVersion) && <button className="brand__update" onClick={() => void startAppUpdate()} aria-label={`下载并安装 RackTop ${latestRelease?.version}`} title={`更新到 RackTop ${latestRelease?.version}`}><CircleArrowUp size={16} /></button>}
+            {!checkingUpdate && shouldShowUpdateBadge(latestRelease?.version, ignoredUpdateVersion) && <button className="brand__update" onClick={() => void startAppUpdate()} aria-label={`${appPlatform === 'linux' ? '下载' : '下载并安装'} RackTop ${latestRelease?.version}`} title={`${appPlatform === 'linux' ? '前往下载' : '更新到'} RackTop ${latestRelease?.version}`}><CircleArrowUp size={16} /></button>}
           </div>
         </div>
         <nav className="primary-nav" aria-label="主导航">
@@ -2610,7 +2614,7 @@ function AboutSheet({ latestRelease, checkingUpdate, updateError, ignoredVersion
   }
   const ignored = Boolean(latestRelease && latestRelease.version === ignoredVersion)
   const updateStatus = checkingUpdate ? '正在检查 GitHub Releases…' : updateError ? `检查失败：${updateError}` : latestRelease ? `发现新版本 v${latestRelease.version}${ignored ? ' · 已忽略此版本提醒' : ''}` : '当前已是最新版本'
-  return <div className="scrim" onMouseDown={(event) => event.target === event.currentTarget && onClose()}><section className="sheet about-sheet" role="dialog" aria-modal="true" aria-labelledby="about-title"><header className="sheet__header"><div><p className="eyebrow">About</p><h2 id="about-title">RackTop</h2></div><button className="icon-button" onClick={onClose} aria-label="关闭"><X size={18} /></button></header><div className="about-body"><div className="about-product"><span className="about-product__mark"><Activity size={28} /></span><div><strong>RackTop {packageInfo.version}</strong><p>面向共享算力服务器的安静、实时资源监控与 SSH 工作台。</p></div></div><div className="about-update" role="status"><span className={latestRelease && !ignored ? 'is-new' : ''}>{checkingUpdate ? <RefreshCw className="spin" size={17} /> : <CircleArrowUp size={17} />}</span><div><strong>版本更新</strong><small>{updateStatus}</small></div><div className="about-update__actions">{latestRelease && !checkingUpdate ? <><button className="button button--secondary button--small" onClick={() => openExternal(latestRelease.url)}>查看版本<ExternalLink size={11} /></button>{!ignored && <button className="button button--quiet button--small" onClick={() => onIgnoreUpdate(latestRelease.version)}>忽略此版本</button>}</> : <><button className="button button--secondary button--small" onClick={() => openExternal(releaseUrl(packageInfo.version))}>版本说明</button><button className="button button--secondary button--small" disabled={checkingUpdate} onClick={onCheckUpdate}>{checkingUpdate ? '检查中…' : '重新检查'}</button></>}</div></div><div className="about-author"><img src={authorAvatar} alt="Tongzh-SEU 头像" /><div><strong>Tongzh-SEU</strong><small>作者与维护者</small><div className="about-author__links"><button className="about-external-link" onClick={() => openExternal('https://github.com/Tongzh-SEU')}><Github size={13} />GitHub @Tongzh-SEU<ExternalLink size={11} /></button><button className="about-external-link" onClick={() => openExternal('https://xhslink.cn/o/AsgFqJMZfR5')}>小红书 @tooongtooong<ExternalLink size={11} /></button></div></div></div><div className="about-links"><button onClick={() => openExternal('https://github.com/Tongzh-SEU/RackTop')}><Github size={15} /><span><strong>GitHub 仓库</strong><small>Tongzh-SEU/RackTop</small></span><ExternalLink size={13} /></button><button aria-expanded={licenses} aria-controls="about-licenses" onClick={() => setLicenses((value) => !value)}><Database size={15} /><span><strong>第三方许可</strong><small>{licenses ? '收起开源组件' : '查看主要运行时依赖'}</small></span><ChevronRight className={`disclosure-icon${licenses ? ' disclosure-icon--expanded' : ''}`} size={13} /></button></div>{licenses && <div className="about-licenses" id="about-licenses"><p><strong>React、Tauri、xterm.js、ECharts、Lucide</strong></p><p>各组件版权归其贡献者所有，并按各自开源许可证分发。完整版本与传递依赖记录见应用包内的 npm 与 Cargo 锁文件。</p></div>}<small className="about-contact">联系：通过 GitHub Issues 或作者主页发起讨论</small></div><footer className="sheet__footer"><button className="button button--primary" onClick={onClose}>完成</button></footer></section></div>
+  return <div className="scrim" onMouseDown={(event) => event.target === event.currentTarget && onClose()}><section className="sheet about-sheet" role="dialog" aria-modal="true" aria-labelledby="about-title"><header className="sheet__header"><div><p className="eyebrow">About</p><h2 id="about-title">RackTop</h2></div><button className="icon-button" onClick={onClose} aria-label="关闭"><X size={18} /></button></header><div className="about-body"><div className="about-product"><span className="about-product__mark"><Activity size={28} /></span><div><strong>RackTop {packageInfo.version}</strong><p>面向共享算力服务器的安静、实时资源监控与 SSH 工作台。</p></div></div><div className="about-update" role="status"><span className={latestRelease && !ignored ? 'is-new' : ''}>{checkingUpdate ? <RefreshCw className="spin" size={17} /> : <CircleArrowUp size={17} />}</span><div><strong>版本更新</strong><small>{updateStatus}</small></div><div className="about-update__actions">{latestRelease && !checkingUpdate ? <><button className="button button--secondary button--small" onClick={() => openExternal(latestRelease.url)}>查看版本<ExternalLink size={11} /></button>{!ignored && <button className="button button--quiet button--small" onClick={() => onIgnoreUpdate(latestRelease.version)}>忽略此版本</button>}</> : <><button className="button button--secondary button--small" onClick={() => openExternal(releaseUrl(packageInfo.version))}>版本说明</button><button className="button button--secondary button--small" disabled={checkingUpdate} onClick={onCheckUpdate}>{checkingUpdate ? '检查中…' : '重新检查'}</button></>}</div></div><div className="about-author"><img src={authorAvatar} alt="Tongzh-SEU 头像" /><div><strong>Tongzh-SEU</strong><small>作者与维护者</small><div className="about-author__links"><button className="about-external-link" onClick={() => openExternal('https://github.com/Tongzh-SEU')}><Github size={13} />GitHub @Tongzh-SEU<ExternalLink size={11} /></button><button className="about-external-link" onClick={() => openExternal('https://xhslink.cn/o/AsgFqJMZfR5')}>小红书 @tooongtooong<ExternalLink size={11} /></button></div></div></div><div className="about-links"><button onClick={() => openExternal('https://github.com/Zjj-Low-Key/RackTop-Linux')}><Github size={15} /><span><strong>GitHub 仓库</strong><small>Zjj-Low-Key/RackTop-Linux</small></span><ExternalLink size={13} /></button><button aria-expanded={licenses} aria-controls="about-licenses" onClick={() => setLicenses((value) => !value)}><Database size={15} /><span><strong>第三方许可</strong><small>{licenses ? '收起开源组件' : '查看主要运行时依赖'}</small></span><ChevronRight className={`disclosure-icon${licenses ? ' disclosure-icon--expanded' : ''}`} size={13} /></button></div>{licenses && <div className="about-licenses" id="about-licenses"><p><strong>React、Tauri、xterm.js、ECharts、Lucide</strong></p><p>各组件版权归其贡献者所有，并按各自开源许可证分发。完整版本与传递依赖记录见应用包内的 npm 与 Cargo 锁文件。</p></div>}<small className="about-contact">联系：通过 GitHub Issues 或作者主页发起讨论</small></div><footer className="sheet__footer"><button className="button button--primary" onClick={onClose}>完成</button></footer></section></div>
 }
 
 function SshImportSheet({ drafts, servers, onClose, onImport }: { drafts: ServerDraft[]; servers: Server[]; onClose: () => void; onImport: (drafts: ServerDraft[]) => Promise<void> }) {

@@ -4,6 +4,7 @@ import { StrictMode, act } from 'react'
 import { createRoot } from 'react-dom/client'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import App from '../App'
+import packageInfo from '../../package.json'
 import { api } from '../services/api'
 import { loadCachedUpdate, saveCachedUpdate, UPDATE_CHECK_INTERVAL_MS } from '../utils/updateCheck'
 
@@ -43,7 +44,7 @@ describe('App startup update check', () => {
     const setTimeout = vi.spyOn(window, 'setTimeout')
     const getLatestRelease = vi.spyOn(api, 'getLatestRelease').mockResolvedValue({
       version: '1.25.4',
-      url: 'https://github.com/Tongzh-SEU/RackTop/releases/tag/v1.25.4',
+      url: 'https://github.com/Zjj-Low-Key/RackTop-Linux/releases/tag/v1.25.4',
     })
     const container = document.createElement('div')
     document.body.append(container)
@@ -71,7 +72,7 @@ describe('App startup update check', () => {
   it('opens the current release notes from the About update row', async () => {
     vi.spyOn(api, 'getLatestRelease').mockResolvedValue({
       version: '1.25.4',
-      url: 'https://github.com/Tongzh-SEU/RackTop/releases/tag/v1.25.4',
+      url: 'https://github.com/Zjj-Low-Key/RackTop-Linux/releases/tag/v1.25.4',
     })
     const open = vi.spyOn(window, 'open').mockReturnValue(null)
     const container = document.createElement('div')
@@ -90,7 +91,7 @@ describe('App startup update check', () => {
     expect(releaseNotes).toBeDefined()
     await act(async () => releaseNotes?.click())
     expect(open).toHaveBeenCalledWith(
-      'https://github.com/Tongzh-SEU/RackTop/releases/tag/v1.25.4',
+      `https://github.com/Zjj-Low-Key/RackTop-Linux/releases/tag/v${packageInfo.version}`,
       '_blank',
       'noopener,noreferrer',
     )

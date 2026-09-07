@@ -1,3 +1,13 @@
+# RackTop-Linux
+
+Linux desktop fork of [Tongzh-SEU/RackTop](https://github.com/Tongzh-SEU/RackTop), retaining the upstream GPL-3.0 license and project conventions.
+
+Version **1.26.0** targets **Ubuntu 24.04 x86_64**. Download the `.deb` (recommended) or `.AppImage` from [Releases](https://github.com/Zjj-Low-Key/RackTop-Linux/releases). See [Linux installation, build and validation](docs/LINUX.md).
+
+The original author's introduction and upstream platform documentation follow; the macOS/Windows downloads below belong to upstream.
+
+---
+
 <div align="right">
   🌐 Language:
   <a href="./README.md"><kbd>简体中文</kbd></a>
