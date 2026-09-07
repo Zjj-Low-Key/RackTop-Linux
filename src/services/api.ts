@@ -529,8 +529,8 @@ export const api = {
     return settings
   },
   async getLatestRelease(): Promise<ReleaseInfo> {
-    if (!isTauri) return { version: '1.25.2', url: 'https://github.com/Tongzh-SEU/RackTop/releases/tag/v1.25.2', publishedAt: new Date().toISOString() }
-    const response = await fetch('https://api.github.com/repos/Tongzh-SEU/RackTop/releases/latest', {
+    if (!isTauri) return { version: '1.25.2', url: 'https://github.com/Zjj-Low-Key/RackTop-Linux/releases/tag/v1.25.2', publishedAt: new Date().toISOString() }
+    const response = await fetch('https://api.github.com/repos/Zjj-Low-Key/RackTop-Linux/releases/latest', {
       headers: { Accept: 'application/vnd.github+json' },
     })
     if (!response.ok) throw new Error(`GitHub Release 检查失败（HTTP ${response.status}）`)

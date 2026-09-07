@@ -3,6 +3,11 @@ name: Build RackTop
 on:
   workflow_dispatch:
     inputs:
+      build_linux:
+        description: Build Ubuntu x64 packages
+        required: true
+        type: boolean
+        default: true
       build_macos:
         description: Build macOS Apple Silicon packages
         required: true
@@ -14,6 +19,14 @@ on:
         type: boolean
         default: true
   push:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'src-tauri/**'
+      - 'scripts/package-linux.sh'
+      - 'scripts/smoke-linux.sh'
+      - 'package*.json'
+      - '.github/workflows/build.yml'
     tags:
       - "v*"
 
@@ -22,7 +35,7 @@ permissions:
 
 jobs:
   macos:
-    if: github.event_name != 'workflow_dispatch' || inputs.build_macos
+    if: startsWith(github.ref, 'refs/tags/') || (github.event_name == 'workflow_dispatch' && inputs.build_macos)
     runs-on: macos-14
     steps:
       - uses: actions/checkout@v4
@@ -124,7 +137,7 @@ jobs:
             src-tauri/target/aarch64-apple-darwin/release/bundle/macos/*.app.tar.gz.sig
 
   windows:
-    if: github.event_name != 'workflow_dispatch' || inputs.build_windows
+    if: startsWith(github.ref, 'refs/tags/') || (github.event_name == 'workflow_dispatch' && inputs.build_windows)
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
@@ -199,3 +212,82 @@ jobs:
           name: RackTop_${{ env.RACKTOP_VERSION }}_x64_zh-CN-msi
           if-no-files-found: error
           path: src-tauri/target/x86_64-pc-windows-msvc/release/bundle/msi/*.msi
+
+  linux:
+    if: github.event_name != 'workflow_dispatch' || inputs.build_linux
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Install Linux build and smoke-test dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libxdo-dev libssl-dev librsvg2-dev libayatana-appindicator3-dev libdbus-1-dev patchelf openssh-client xdg-utils xvfb xterm
+      - run: npm ci
+      - run: npm test
+      - run: cargo test --locked --manifest-path src-tauri/Cargo.toml
+      - name: Build Linux packages
+        env:
+          APPIMAGE_EXTRACT_AND_RUN: '1'
+        run: npm run bundle:linux
+      - name: Verify packages and launch installed application
+        run: bash scripts/smoke-linux.sh
+      - name: Read version
+        run: echo "RACKTOP_VERSION=$(node -p "require('./package.json').version")" >> "$GITHUB_ENV"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: RackTop_${{ env.RACKTOP_VERSION }}_linux-amd64-deb
+          path: src-tauri/target/release/linux-packages/*.deb
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        with:
+          name: RackTop_${{ env.RACKTOP_VERSION }}_linux-x86_64-AppImage
+          path: src-tauri/target/release/linux-packages/*.AppImage
+          if-no-files-found: error
+
+  release-linux:
+    needs: linux
+    if: github.ref == 'refs/heads/main' && github.repository == 'Zjj-Low-Key/RackTop-Linux'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: RackTop_*_linux-*
+          path: linux-release
+          merge-multiple: true
+      - name: Publish verified Linux release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          version=$(node -p "require('./package.json').version")
+          tag="v$version"
+          deb="RackTop_${version}_linux-amd64.deb"
+          appimage="RackTop_${version}_linux-x86_64.AppImage"
+          test -s "linux-release/$deb"
+          test -s "linux-release/$appimage"
+          # Never replace an existing product release or move its tag.
+          if gh release view "$tag" >/dev/null 2>&1; then
+            echo "Release $tag already exists; leaving it unchanged."
+            exit 0
+          fi
+          test "$(gh api "repos/$GITHUB_REPOSITORY/commits/main" --jq .sha)" = "$GITHUB_SHA"
+          printf '## 主要更新\n\n- 新增 Ubuntu 24.04 x64 桌面支持，提供 DEB 和 AppImage 安装包。\n- 支持 Linux 系统钥匙串保存 SSH 密码。\n- Linux 更新检查指向 RackTop-Linux，并从发布页下载新版。\n\n## 下载\n\n- `%s`：Ubuntu 24.04 x64 安装包，推荐使用。\n- `%s`：Linux x86_64 便携程序，需要 WebKitGTK 4.1 和桌面会话；可用 `--appimage-extract-and-run` 在没有 FUSE 的系统启动。\n' "$deb" "$appimage" > release-notes.md
+          gh release create "$tag" --target "$GITHUB_SHA" --title "RackTop v$version 稳定版" --notes-file release-notes.md --draft "linux-release/$deb" "linux-release/$appimage"
+          for filename in "$deb" "$appimage"; do
+            digest=$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$tag" --jq ".assets[] | select(.name == \"$filename\") | .digest")
+            expected="sha256:$(sha256sum "linux-release/$filename" | cut -d ' ' -f1)"
+            test "$digest" = "$expected"
+          done
+          gh release edit "$tag" --draft=false --latest
+          gh release download "$tag" --dir verified-download --pattern "$deb" --pattern "$appimage"
+          cmp "linux-release/$deb" "verified-download/$deb"
+          cmp "linux-release/$appimage" "verified-download/$appimage"

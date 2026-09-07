@@ -1,3 +1,12 @@
+## RackTop-Linux 工作区与发布补充
+
+本 fork 延续下文的开发、版本、验证和交付规范。Linux 适配时，以当前克隆的 `Zjj-Low-Key/RackTop-Linux` 仓库根目录作为工作区；下文原作者的 macOS 绝对路径仅供上游环境参考，不能用于 Ubuntu。
+
+- Linux 发布产物为 `RackTop_X.Y.Z_linux-amd64.deb` 与 `RackTop_X.Y.Z_linux-x86_64.AppImage`；遵守同样的版本命名、真实构建、验证、Digest 核对及 Release 正文规范。
+- `.github/workflows/build.yml` 保留上游 macOS/Windows 标签构建任务，新增 Ubuntu 24.04 构建、安装/卸载与启动烟雾测试；main 的产品变更在 Linux 验证成功后发布 Linux 附件。已存在的 Release 不覆盖。
+- Linux 暂采用 Release 下载页手动更新，不启用上游签名的自动安装，也不发布没有独立签名配置的 updater 清单。
+- 不将本机安装的 Agent 技能或平台自动生成的 schema 差异纳入产品提交。
+
 ## 0 固定工作区与工具路径
 
 RackTop 开发 Agent 必须优先使用以下固定路径，不得仅依赖当前 shell 的 `PATH` 或工作目录推断工具是否存在：

@@ -2,6 +2,50 @@
 
 本文档记录 RackTop 各版本的用户可见变化、验证范围和发布注意事项。最新版本始终位于最上方。
 
+
+## 1.26.0 — Ubuntu Linux 桌面支持
+
+- 修改时间：2026-09-07 18:45:08 +08:00
+- 发布日期：2026-09-07（以 GitHub Release 实际发布为准）
+- 发布阶段：功能版本
+- 桌面平台：新增 Ubuntu 24.04 x86_64；保留上游 macOS / Windows 配置
+- 升级类型：兼容升级，应用标识与 SQLite 数据格式不变。
+
+### 版本概述
+
+为 Ubuntu 桌面提供 RackTop 的 Linux 安装包，复用原有 SSH 终端、算力监控、资源同步和任务工作流，并延续上游许可证与开发规范。
+
+### 本版本修改
+
+- 新增 Ubuntu x64 DEB 与 AppImage、本地打包脚本和 GitHub Actions 构建及发布流程。
+- 修复 Linux 被识别成 macOS，使用 Linux 原生窗口边框与字体，去掉 macOS 标题栏占位。
+- 启用 Linux Secret Service 系统钥匙串后端，支持保存 SSH 密码。
+- Linux 更新检查和产品仓库链接指向 RackTop-Linux，更新按钮打开 Release 下载页。
+- 同步 npm、Cargo、Tauri 版本与中英文说明，保留原作者署名及完整历史版本记录。
+
+### 验证记录
+
+- Ubuntu 24.04 x86_64：前端 55 个测试文件、233 项测试通过；TypeScript 和 Vite 生产构建通过。
+- Rust：84 项测试通过，上游 2 项依赖外部环境的测试按原配置跳过。
+- 真实 Linux Secret Service 写入、重新打开读取、删除及删除后不存在验证通过，使用一次性测试凭据。
+- 本地 Tauri release 构建成功，产出 DEB 与 AppImage，已检查 DEB 版本、架构和运行依赖。
+- 解包 DEB 后原生启动并创建独立 SQLite；用户确认窗口显示、设置、添加服务器、最小化、恢复和关闭正常。
+- AppImage 在当前桌面以 `--appimage-extract-and-run` 启动并创建独立数据库。
+- 浏览器预览实际检查关于页版本、fork 仓库链接、添加服务器引导与表单。
+- CI 增加 DEB 安装/卸载及两个包的隔离启动烟雾测试；其结果以本版本 Actions 记录为准。
+
+### 已知事项
+
+- Linux 暂使用 Release 下载页手动安装更新；未配置独立签名，不启用上游自动更新。
+- 未提供真实 GPU 服务器，因此未进行远程 GPU 采集、任务启动及 SSH 密码实机连接验证；现有自动化测试通过不等于这些远程场景已验证。
+- 未在 macOS、Windows、ARM64 或其他 Linux 发行版实机验证；未单独验证 X11 与 Wayland 两种会话。
+- 本地 DEB 启动采用解包方式；系统安装/卸载由 CI 验证，发布附件和 Digest 以成功的 Release 流程为准。
+- Vite 沿用上游大型资源块提示，本次未调整前端模块拆分。
+
+### 升级说明
+
+Linux 用户从本仓库 Release 下载 DEB 或 AppImage。数据目录默认 `~/.local/share/com.racktop.desktop/`，系统钥匙串保存密码，卸载不会删除用户数据。
+
 ## 1.25.4 — 应用内自动更新与 PPU 支持
 
 - 修改时间：2026-09-02 04:49:10 +08:00
