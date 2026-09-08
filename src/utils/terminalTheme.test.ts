@@ -16,8 +16,9 @@ function contrast(first: string, second: string) {
 
 describe('terminal theme', () => {
   it('uses a readable Linux monospace fallback chain', () => {
+    expect(TERMINAL_FONT_FAMILY.startsWith('"Ubuntu Mono"')).toBe(true)
     expect(TERMINAL_FONT_FAMILY).toContain('DejaVu Sans Mono')
-    expect(TERMINAL_FONT_FAMILY).toContain('Noto Sans Mono CJK SC')
+    expect(TERMINAL_FONT_FAMILY).toContain('Noto Sans Mono')
     expect(TERMINAL_FONT_FAMILY.endsWith('monospace')).toBe(true)
   })
 
