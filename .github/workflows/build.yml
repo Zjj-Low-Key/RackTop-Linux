@@ -278,6 +278,12 @@ jobs:
           appimage="RackTop_${version}_linux-x86_64.AppImage"
           test -s "linux-release/$deb"
           test -s "linux-release/$appimage"
+          # A previous failed run may have left a draft with old build artifacts. Remove only that private draft.
+          draft_id=$(gh api --paginate "repos/$GITHUB_REPOSITORY/releases?per_page=100" --jq ".[] | select(.draft == true and .tag_name == \"$tag\") | .id" | head -1)
+          if [ -n "$draft_id" ]; then
+            echo "Removing incomplete draft release $draft_id."
+            gh api --method DELETE "repos/$GITHUB_REPOSITORY/releases/$draft_id"
+          fi
           test "$(gh api "repos/$GITHUB_REPOSITORY/commits/main" --jq .sha)" = "$GITHUB_SHA"
           latest_notes=$(awk '
             /^## [0-9]/ {
@@ -289,29 +295,22 @@ jobs:
           ' docs/Version_overview.md)
           test -n "$latest_notes"
           {
-            printf '## 主要更新\\n\\n%s\\n\\n## 下载\\n\\n' "$latest_notes"
-            printf -- '- %s：Ubuntu 24.04 x64 安装包，推荐使用。\\n' "$deb"
-            printf -- '- %s：Linux x86_64 便携程序，需要 WebKitGTK 4.1 和桌面会话；可用 --appimage-extract-and-run 在没有 FUSE 的系统启动。\\n' "$appimage"
+            printf '## 主要更新\n\n%s\n\n## 下载\n\n' "$latest_notes"
+            printf -- '- `%s`：Ubuntu 24.04 x64 安装包，推荐使用。\n' "$deb"
+            printf -- '- `%s`：Linux x86_64 便携程序，需要 WebKitGTK 4.1 和桌面会话；可用 `--appimage-extract-and-run` 在没有 FUSE 的系统启动。\n' "$appimage"
           } > release-notes.md
-          # A previous failed run may have left a draft with old build artifacts. Remove only that private draft.
           if gh api "repos/$GITHUB_REPOSITORY/releases/tags/$tag" >/dev/null 2>&1; then
-            echo "Release $tag already exists; leaving it unchanged."
+            echo "Release $tag already exists; updating its notes without replacing assets."
+            gh release edit "$tag" --notes-file release-notes.md --latest
             exit 0
           fi
-          draft_id=$(gh api --paginate "repos/$GITHUB_REPOSITORY/releases?per_page=100" --jq ".[] | select(.draft == true and .tag_name == \"$tag\") | .id" | head -1)
-          if [ -n "$draft_id" ]; then
-            echo "Removing incomplete draft release $draft_id."
-            gh api --method DELETE "repos/$GITHUB_REPOSITORY/releases/$draft_id"
-          fi
           gh release create "$tag" --target "$GITHUB_SHA" --title "RackTop v$version 稳定版" --notes-file release-notes.md --draft "linux-release/$deb" "linux-release/$appimage"
-          release_id=$(gh api --paginate "repos/$GITHUB_REPOSITORY/releases?per_page=100" --jq ".[] | select(.draft == true and .tag_name == \"$tag\") | .id" | head -1)
-          test -n "$release_id"
-          gh api --method PATCH "repos/$GITHUB_REPOSITORY/releases/$release_id" -f draft=false -f prerelease=false -f make_latest=true >/dev/null
           for filename in "$deb" "$appimage"; do
             digest=$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$tag" --jq ".assets[] | select(.name == \"$filename\") | .digest")
             expected="sha256:$(sha256sum "linux-release/$filename" | cut -d ' ' -f1)"
             test "$digest" = "$expected"
           done
+          gh release edit "$tag" --draft=false --latest
           gh release download "$tag" --dir verified-download --pattern "$deb" --pattern "$appimage"
           cmp "linux-release/$deb" "verified-download/$deb"
           cmp "linux-release/$appimage" "verified-download/$appimage"
