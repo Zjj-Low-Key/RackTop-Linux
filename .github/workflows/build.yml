@@ -279,7 +279,20 @@ jobs:
           test -s "linux-release/$deb"
           test -s "linux-release/$appimage"
           test "$(gh api "repos/$GITHUB_REPOSITORY/commits/main" --jq .sha)" = "$GITHUB_SHA"
-          printf '## 主要更新\n\n- 新增 Ubuntu 24.04 x64 桌面支持，提供 DEB 和 AppImage 安装包。\n- 支持 Linux 系统钥匙串保存 SSH 密码。\n- Linux 更新检查指向 RackTop-Linux，并从发布页下载新版。\n\n## 下载\n\n- `%s`：Ubuntu 24.04 x64 安装包，推荐使用。\n- `%s`：Linux x86_64 便携程序，需要 WebKitGTK 4.1 和桌面会话；可用 `--appimage-extract-and-run` 在没有 FUSE 的系统启动。\n' "$deb" "$appimage" > release-notes.md
+          latest_notes=$(awk '
+            /^## [0-9]/ {
+              if (capturing) exit
+              capturing=1
+              next
+            }
+            capturing { print }
+          ' docs/Version_overview.md)
+          test -n "$latest_notes"
+          {
+            printf '## 主要更新\\n\\n%s\\n\\n## 下载\\n\\n' "$latest_notes"
+            printf -- '- %s：Ubuntu 24.04 x64 安装包，推荐使用。\\n' "$deb"
+            printf -- '- %s：Linux x86_64 便携程序，需要 WebKitGTK 4.1 和桌面会话；可用 --appimage-extract-and-run 在没有 FUSE 的系统启动。\\n' "$appimage"
+          } > release-notes.md
           # A previous failed run may have left a draft with old build artifacts. Remove only that private draft.
           if gh api "repos/$GITHUB_REPOSITORY/releases/tags/$tag" >/dev/null 2>&1; then
             echo "Release $tag already exists; leaving it unchanged."
