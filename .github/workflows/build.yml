@@ -305,12 +305,14 @@ jobs:
             exit 0
           fi
           gh release create "$tag" --target "$GITHUB_SHA" --title "RackTop v$version 稳定版" --notes-file release-notes.md --draft "linux-release/$deb" "linux-release/$appimage"
+          release_id=$(gh api --paginate "repos/$GITHUB_REPOSITORY/releases?per_page=100" --jq ".[] | select(.draft == true and .tag_name == \"$tag\") | .id" | head -1)
+          test -n "$release_id"
           for filename in "$deb" "$appimage"; do
-            digest=$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$tag" --jq ".assets[] | select(.name == \"$filename\") | .digest")
+            digest=$(gh api "repos/$GITHUB_REPOSITORY/releases/$release_id" --jq ".assets[] | select(.name == \"$filename\") | .digest")
             expected="sha256:$(sha256sum "linux-release/$filename" | cut -d ' ' -f1)"
             test "$digest" = "$expected"
           done
-          gh release edit "$tag" --draft=false --latest
+          gh api --method PATCH "repos/$GITHUB_REPOSITORY/releases/$release_id" -F draft=false -f make_latest=true >/dev/null
           gh release download "$tag" --dir verified-download --pattern "$deb" --pattern "$appimage"
           cmp "linux-release/$deb" "verified-download/$deb"
           cmp "linux-release/$appimage" "verified-download/$appimage"
