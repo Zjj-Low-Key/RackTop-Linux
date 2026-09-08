@@ -119,6 +119,10 @@ impl TerminalManager {
 
 fn configured_ssh_command(server: &Server, password: Option<&str>) -> Result<CommandBuilder, String> {
     let mut command = CommandBuilder::new("ssh");
+    // Keep the remote shell in a color-capable terminal mode. Ubuntu's default
+    // bash profile uses TERM to decide whether to paint prompts and `ls` output.
+    command.env("TERM", "xterm-256color");
+    command.env("COLORTERM", "truecolor");
     command.args(["-tt", "-o", "ConnectTimeout=8", "-o", "ServerAliveInterval=5", "-o", "ServerAliveCountMax=2", "-o", "StrictHostKeyChecking=yes"]);
     if server.auth_method == "password" {
         let password = password.ok_or("没有可用密码；请重新编辑服务器并输入密码")?;

@@ -7,6 +7,7 @@ import { AlertCircle, RefreshCw, SquareTerminal, X } from 'lucide-react'
 import { api } from '../services/api'
 import { analyzeCudaCommand } from '../utils/cudaCommand'
 import { bracketTerminalPaste, isMultilineTerminalPaste, normalizeTerminalPaste } from '../utils/terminalPaste'
+import { TERMINAL_FONT_FAMILY, TERMINAL_THEME } from '../utils/terminalTheme'
 
 interface TerminalEvent { sessionId: string; data?: string }
 
@@ -23,7 +24,20 @@ export function SshTerminal({ serverId, serverName, gpuIndex, acceleratorVendor 
   useEffect(() => {
     if (!api.isDesktop || !containerRef.current) return
     let disposed = false
-    const terminal = new Terminal({ cursorBlink: true, convertEol: false, fontFamily: 'SFMono-Regular, Menlo, Monaco, Consolas, monospace', fontSize: 12, lineHeight: 1.3, scrollback: 5000, theme: { background: '#101114', foreground: '#e7e8ea', cursor: '#79aaff', selectionBackground: '#45658a88' } })
+    const terminal = new Terminal({
+      cursorBlink: true,
+      convertEol: false,
+      drawBoldTextInBrightColors: true,
+      fontFamily: TERMINAL_FONT_FAMILY,
+      fontSize: 14,
+      fontWeight: 450,
+      fontWeightBold: 700,
+      letterSpacing: 0,
+      lineHeight: 1.35,
+      minimumContrastRatio: 4.5,
+      scrollback: 5000,
+      theme: TERMINAL_THEME,
+    })
     const fit = new FitAddon()
     terminal.loadAddon(fit)
     terminal.open(containerRef.current)
