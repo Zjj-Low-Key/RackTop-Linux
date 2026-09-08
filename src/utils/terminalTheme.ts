@@ -1,9 +1,8 @@
 import type { ITheme } from '@xterm/xterm'
 
 export const TERMINAL_FONT_FAMILY = [
-  '"JetBrains Mono"',
-  '"Cascadia Mono"',
-  '"Noto Sans Mono CJK SC"',
+  '"Ubuntu Mono"',
+  '"Noto Sans Mono"',
   '"DejaVu Sans Mono"',
   '"Liberation Mono"',
   'monospace',

@@ -29,8 +29,8 @@ export function SshTerminal({ serverId, serverName, gpuIndex, acceleratorVendor 
       convertEol: false,
       drawBoldTextInBrightColors: true,
       fontFamily: TERMINAL_FONT_FAMILY,
-      fontSize: 14,
-      fontWeight: 450,
+      fontSize: 13,
+      fontWeight: 400,
       fontWeightBold: 700,
       letterSpacing: 0,
       lineHeight: 1.35,
@@ -55,6 +55,12 @@ export function SshTerminal({ serverId, serverName, gpuIndex, acceleratorVendor 
         if (id) void api.resizeTerminal(id, terminal.cols, terminal.rows)
       })
     }
+
+    // xterm measures its character cell before the WebView has necessarily
+    // resolved the requested system font. Refit once that font is available,
+    // otherwise the glyphs can look widely spaced inside an oversized cell.
+    const fontReady = document.fonts?.load(`400 13px ${TERMINAL_FONT_FAMILY}`)
+    if (fontReady) void fontReady.then(() => { if (!disposed) fitAndResize() })
 
     const decode = (value: string) => Uint8Array.from(atob(value), (character) => character.charCodeAt(0))
     const outputListener = listen<TerminalEvent>('terminal-output', ({ payload }) => {
